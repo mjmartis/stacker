@@ -103,7 +103,6 @@ async def main():
     print('  ', '\n  '.join(epoch_urls), sep='')
   else:
     print('  ', '\n  '.join(epoch_urls[:URL_DISPLAY_COUNT] + ['...'] + epoch_urls[-URL_DISPLAY_COUNT:]), sep='')
-  exit(0)
 
   with open(SUCCESS_FILE, 'a') as success_file, open(ERROR_FILE, 'a') as error_file:
     def process_fn(b, u): return process_product(success_file, error_file, DEST_DIR, b, u)
