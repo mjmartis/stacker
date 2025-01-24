@@ -7,6 +7,7 @@ from scraper import process_batches
 
 PAGE_COUNT = 538
 BATCH_SIZE = 4
+REQ_THROTTLE_SEC = 1
 INDEX_URL = 'http://au.iherb.com/c/supplements?p='
 
 LINKS_FILE = 'index_links.txt'
@@ -42,7 +43,7 @@ async def main():
   with open(LINKS_FILE, 'a') as links_file, open(ERROR_FILE, 'a') as error_file:
     def process_fn(b, u): return save_extracted_links(links_file, b, u)
     def error_fn(u): return save_error_url(error_file, u)
-    await process_batches(BATCH_SIZE, urls, process_fn, error_fn)
+    await process_batches(BATCH_SIZE, REQ_THROTTLE_SEC, urls, process_fn, error_fn)
 
 if __name__ == '__main__':
   asyncio.run(main())

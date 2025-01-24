@@ -1,11 +1,13 @@
 import asyncio
+import time
+import random
 import aiohttp
 import os
 
 __all__ = ['get', 'process_batches']
 
 SCRAPE_URL = 'https://api.scrapfly.io/scrape'
-REQ_THROTTLE = 1
+REQ_THROTTLE_JITTER_SEC = 0.5
 
 
 def json_lookup(json, keys):
@@ -31,22 +33,25 @@ async def get(url):
       return status_code or 500, body
 
 
-async def get_batch_page(batch_size, page_index, url):
+async def get_batch_page(batch_size, req_throttle_sec, page_index, url):
   # Stagger requests within the batch.
-  wait = (page_index % batch_size) * REQ_THROTTLE
+  wait = (page_index % batch_size + 1) * req_throttle_sec + random.uniform(0, REQ_THROTTLE_JITTER_SEC)
   await asyncio.sleep(wait)
 
   print(f'Fetching URL {url}')
+  start_time = time.time()
   status, body = await get(url)
-  print(f'Fetched URL {url} with response code {status}')
+  end_time = time.time()
+  print(f'Fetched URL {url} with response code {status} ({end_time - start_time}s)')
   return url, status, body
 
 
-async def process_batches(batch_size, urls, process_fn, error_fn):
+async def process_batches(batch_size, req_throttle_sec, urls, process_fn, error_fn):
   urls_count = len(urls)
   for b, i in enumerate(range(0, urls_count, batch_size)):
     print(f'Batch {b+1} started')
-    tasks = [get_batch_page(batch_size, j, urls[j]) for j in range(i, min(urls_count, i + batch_size))]
+    tasks = [get_batch_page(batch_size, req_throttle_sec, j, urls[j])
+             for j in range(i, min(urls_count, i + batch_size))]
 
     for url, status, body in await asyncio.gather(*tasks):
       if status == 200:
